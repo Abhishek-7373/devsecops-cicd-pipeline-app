@@ -2,13 +2,14 @@ pipeline {
     agent any
 
     environment {
-        SONAR_TOKEN = credentials('sonar-token')
-
         IMAGE_NAME = "devsecops-app"
         IMAGE_TAG = "latest"
-
         SONAR_HOST_URL = "http://172.31.15.27:9000"
         EC2_HOST = "172.31.15.27"
+    }
+
+    tools {
+        nodejs 'node18'
     }
 
     stages {
@@ -24,6 +25,7 @@ pipeline {
             steps {
                 withSonarQubeEnv('sonarqube-server') {
                     sh """
+                        node -v
                         sonar-scanner \
                         -Dsonar.projectKey=devsecops-project \
                         -Dsonar.projectName=DevSecOps-Project \
@@ -38,6 +40,7 @@ pipeline {
         stage('Quality Gate') {
             steps {
                 timeout(time: 10, unit: 'MINUTES') {
+                    // safer: don't always kill pipeline immediately
                     waitForQualityGate abortPipeline: true
                 }
             }
@@ -45,13 +48,17 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
+                sh """
+                    docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
+                """
             }
         }
 
         stage('Trivy Scan') {
             steps {
-                sh "trivy image ${IMAGE_NAME}:${IMAGE_TAG}"
+                sh """
+                    trivy image ${IMAGE_NAME}:${IMAGE_TAG}
+                """
             }
         }
 
@@ -63,9 +70,12 @@ pipeline {
                     passwordVariable: 'DOCKERHUB_PSW'
                 )]) {
                     sh """
-                        echo "$DOCKERHUB_PSW" | docker login -u "$DOCKERHUB_USR" --password-stdin
-                        docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${DOCKERHUB_USR}/${IMAGE_NAME}:${IMAGE_TAG}
-                        docker push ${DOCKERHUB_USR}/${IMAGE_NAME}:${IMAGE_TAG}
+                        echo \$DOCKERHUB_PSW | docker login -u \$DOCKERHUB_USR --password-stdin
+
+                        docker tag ${IMAGE_NAME}:${IMAGE_TAG} \
+                        \$DOCKERHUB_USR/${IMAGE_NAME}:${IMAGE_TAG}
+
+                        docker push \$DOCKERHUB_USR/${IMAGE_NAME}:${IMAGE_TAG}
                     """
                 }
             }
@@ -76,10 +86,10 @@ pipeline {
                 sshagent(['ec2-ssh-key']) {
                     sh """
                         ssh -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} '
-                            docker pull ${DOCKERHUB_USR}/${IMAGE_NAME}:${IMAGE_TAG} &&
+                            docker pull $DOCKERHUB_USR/${IMAGE_NAME}:${IMAGE_TAG} &&
                             docker stop app || true &&
                             docker rm app || true &&
-                            docker run -d --name app -p 3000:3000 ${DOCKERHUB_USR}/${IMAGE_NAME}:${IMAGE_TAG}
+                            docker run -d --name app -p 3000:3000 $DOCKERHUB_USR/${IMAGE_NAME}:${IMAGE_TAG}
                         '
                     """
                 }
@@ -91,6 +101,7 @@ pipeline {
         success {
             echo "PIPELINE SUCCESS - DevSecOps flow completed"
         }
+
         failure {
             echo "PIPELINE FAILED - check logs"
         }
