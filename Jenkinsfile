@@ -36,7 +36,7 @@ pipeline {
 
         stage('Quality Gate') {
             steps {
-                timeout(time: 2, unit: 'MINUTES') {
+                timeout(time: 10, unit: 'MINUTES') {
                     waitForQualityGate abortPipeline: true
                 }
             }
@@ -57,7 +57,7 @@ pipeline {
         stage('Docker Push') {
             steps {
                 sh """
-                    echo ${DOCKERHUB_PSW} | docker login -u ${DOCKERHUB_USR} --password-stdin
+                    echo $DOCKERHUB_PSW | docker login -u $DOCKERHUB_USR --password-stdin
                     docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${DOCKERHUB_USR}/${IMAGE_NAME}:${IMAGE_TAG}
                     docker push ${DOCKERHUB_USR}/${IMAGE_NAME}:${IMAGE_TAG}
                 """
