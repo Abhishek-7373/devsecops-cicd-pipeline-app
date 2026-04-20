@@ -15,7 +15,8 @@ pipeline {
 
         stage('Git Checkout') {
             steps {
-                git url: 'https://github.com/Abhishek-7373/devsecops-cicd-pipeline-app.git', branch: 'main'
+                git url: 'https://github.com/Abhishek-7373/devsecops-cicd-pipeline-app.git',
+                    branch: 'main'
             }
         }
 
@@ -56,11 +57,17 @@ pipeline {
 
         stage('Docker Push') {
             steps {
-                sh """
-                    echo $DOCKERHUB_PSW | docker login -u $DOCKERHUB_USR --password-stdin
-                    docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${DOCKERHUB_USR}/${IMAGE_NAME}:${IMAGE_TAG}
-                    docker push ${DOCKERHUB_USR}/${IMAGE_NAME}:${IMAGE_TAG}
-                """
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-creds',
+                    usernameVariable: 'DOCKERHUB_USR',
+                    passwordVariable: 'DOCKERHUB_PSW'
+                )]) {
+                    sh """
+                        echo "$DOCKERHUB_PSW" | docker login -u "$DOCKERHUB_USR" --password-stdin
+                        docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${DOCKERHUB_USR}/${IMAGE_NAME}:${IMAGE_TAG}
+                        docker push ${DOCKERHUB_USR}/${IMAGE_NAME}:${IMAGE_TAG}
+                    """
+                }
             }
         }
 
