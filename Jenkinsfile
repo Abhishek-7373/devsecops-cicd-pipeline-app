@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB = credentials('dockerhub-creds')
         SONAR_TOKEN = credentials('sonar-token')
 
         IMAGE_NAME = "devsecops-app"
