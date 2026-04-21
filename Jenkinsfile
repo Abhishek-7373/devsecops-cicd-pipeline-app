@@ -1,10 +1,16 @@
+
 def sendGoogleChatNotification(String message) {
     withCredentials([string(credentialsId: 'google-chat-webhook', variable: 'WEBHOOK_URL')]) {
-        sh '''
+
+        def payload = """{"text": "${message}"}"""
+
+        writeFile file: 'chat.json', text: payload
+
+        sh """
         curl -X POST -H "Content-Type: application/json" \
-        --data "{\"text\":\"''' + message + '''\"}" \
+        --data @chat.json \
         "$WEBHOOK_URL"
-        '''
+        """
     }
 }
 
@@ -113,20 +119,20 @@ pipeline {
             script {
                 sendGoogleChatNotification("✅ SUCCESS: Build ${env.BUILD_NUMBER} (${env.IMAGE_TAG}) completed successfully. Job: ${env.JOB_NAME}")
             }
-            echo "✅ Pipeline succeeded!"
+            echo "✅ Pipeline SUCCESS"
         }
 
         failure {
             script {
                 sendGoogleChatNotification("❌ FAILURE: Build ${env.BUILD_NUMBER} failed. Check Jenkins logs. Job: ${env.JOB_NAME}")
             }
-            echo "❌ Pipeline failed!"
+            echo "❌ Pipeline FAILED"
         }
 
         always {
             sh 'docker logout || true'
             cleanWs()
-            echo "Pipeline execution completed"
+            echo "Workspace cleaned"
         }
     }
 }
