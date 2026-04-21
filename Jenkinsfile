@@ -22,12 +22,12 @@ pipeline {
                 withSonarQubeEnv('sonarqube-server') {
                     withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
                         sh '''
-                            sonar-scanner \
-                            -Dsonar.projectKey=devsecops-project \
-                            -Dsonar.projectName=DevSecOps-Project \
-                            -Dsonar.sources=. \
-                            -Dsonar.host.url=$SONAR_HOST_URL \
-                            -Dsonar.login=$SONAR_TOKEN
+                        sonar-scanner \
+                        -Dsonar.projectKey=devsecops-project \
+                        -Dsonar.projectName=DevSecOps-Project \
+                        -Dsonar.sources=. \
+                        -Dsonar.host.url=$SONAR_HOST_URL \
+                        -Dsonar.login=$SONAR_TOKEN
                         '''
                     }
                 }
@@ -62,9 +62,9 @@ pipeline {
                     passwordVariable: 'DOCKERHUB_PSW'
                 )]) {
                     sh '''
-                        echo "$DOCKERHUB_PSW" | docker login -u "$DOCKERHUB_USR" --password-stdin
-                        docker tag $IMAGE_NAME:$IMAGE_TAG $DOCKERHUB_USR/$IMAGE_NAME:$IMAGE_TAG
-                        docker push $DOCKERHUB_USR/$IMAGE_NAME:$IMAGE_TAG
+                    echo "$DOCKERHUB_PSW" | docker login -u "$DOCKERHUB_USR" --password-stdin
+                    docker tag $IMAGE_NAME:$IMAGE_TAG $DOCKERHUB_USR/$IMAGE_NAME:$IMAGE_TAG
+                    docker push $DOCKERHUB_USR/$IMAGE_NAME:$IMAGE_TAG
                     '''
                 }
             }
@@ -85,12 +85,12 @@ pipeline {
                     )
                 ]) {
                     sh '''
-                        ssh -i $SSH_KEY -o StrictHostKeyChecking=no $SSH_USER@$EC2_HOST "
-                            docker pull $DOCKERHUB_USR/$IMAGE_NAME:$IMAGE_TAG &&
-                            docker stop app || true &&
-                            docker rm app || true &&
-                            docker run -d --name app -p 3000:3000 $DOCKERHUB_USR/$IMAGE_NAME:$IMAGE_TAG
-                        "
+                    ssh -i $SSH_KEY -o StrictHostKeyChecking=no $SSH_USER@$EC2_HOST "
+                        docker pull $DOCKERHUB_USR/$IMAGE_NAME:$IMAGE_TAG &&
+                        docker stop app || true &&
+                        docker rm app || true &&
+                        docker run -d --name app -p 3000:3000 $DOCKERHUB_USR/$IMAGE_NAME:$IMAGE_TAG
+                    "
                     '''
                 }
             }
@@ -105,7 +105,7 @@ pipeline {
                 echo "Sending SUCCESS notification..."
 
                 curl -X POST -H "Content-Type: application/json" \
-                -d "{\"text\": \"✅ CI/CD SUCCESS 🚀\\nJob: ${JOB_NAME}\\nBuild: ${BUILD_NUMBER}\\nImage: devsecops-app:latest\"}" \
+                --data "{\"text\":\"✅ CI/CD SUCCESS 🚀\\nJob: ${JOB_NAME}\\nBuild: ${BUILD_NUMBER}\\nImage: devsecops-app:latest\"}" \
                 "$WEBHOOK_URL"
                 '''
             }
@@ -117,7 +117,7 @@ pipeline {
                 echo "Sending FAILURE notification..."
 
                 curl -X POST -H "Content-Type: application/json" \
-                -d "{\"text\": \"❌ CI/CD FAILED 💥\\nJob: ${JOB_NAME}\\nBuild: ${BUILD_NUMBER}\\nCheck Jenkins logs\"}" \
+                --data "{\"text\":\"❌ CI/CD FAILED 💥\\nJob: ${JOB_NAME}\\nBuild: ${BUILD_NUMBER}\\nCheck Jenkins logs\"}" \
                 "$WEBHOOK_URL"
                 '''
             }
