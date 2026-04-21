@@ -101,25 +101,25 @@ pipeline {
 
         success {
             withCredentials([string(credentialsId: 'google-chat-webhook', variable: 'WEBHOOK_URL')]) {
-                sh """
-                curl -X POST -H 'Content-Type: application/json' \
-                -d '{
-                    "text": "✅ CI/CD SUCCESS 🚀\\nJob: ${JOB_NAME}\\nBuild: ${BUILD_NUMBER}\\nImage: ${IMAGE_NAME}:${IMAGE_TAG}"
-                }' \
-                $WEBHOOK_URL
-                """
+                sh '''
+                echo "Sending SUCCESS notification..."
+
+                curl -X POST -H "Content-Type: application/json" \
+                -d "{\"text\": \"✅ CI/CD SUCCESS 🚀\\nJob: ${JOB_NAME}\\nBuild: ${BUILD_NUMBER}\\nImage: devsecops-app:latest\"}" \
+                "$WEBHOOK_URL"
+                '''
             }
         }
 
         failure {
             withCredentials([string(credentialsId: 'google-chat-webhook', variable: 'WEBHOOK_URL')]) {
-                sh """
-                curl -X POST -H 'Content-Type: application/json' \
-                -d '{
-                    "text": "❌ CI/CD FAILED 💥\\nJob: ${JOB_NAME}\\nBuild: ${BUILD_NUMBER}\\nCheck Jenkins logs for details"
-                }' \
-                $WEBHOOK_URL
-                """
+                sh '''
+                echo "Sending FAILURE notification..."
+
+                curl -X POST -H "Content-Type: application/json" \
+                -d "{\"text\": \"❌ CI/CD FAILED 💥\\nJob: ${JOB_NAME}\\nBuild: ${BUILD_NUMBER}\\nCheck Jenkins logs\"}" \
+                "$WEBHOOK_URL"
+                '''
             }
         }
 
