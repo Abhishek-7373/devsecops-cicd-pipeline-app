@@ -98,11 +98,33 @@ pipeline {
     }
 
     post {
+
         success {
-            echo "PIPELINE SUCCESS - DevSecOps flow completed"
+            withCredentials([string(credentialsId: 'google-chat-webhook', variable: 'WEBHOOK_URL')]) {
+                sh """
+                curl -X POST -H 'Content-Type: application/json' \
+                -d '{
+                    "text": "✅ CI/CD SUCCESS 🚀\\nJob: ${JOB_NAME}\\nBuild: ${BUILD_NUMBER}\\nImage: ${IMAGE_NAME}:${IMAGE_TAG}"
+                }' \
+                $WEBHOOK_URL
+                """
+            }
         }
+
         failure {
-            echo "PIPELINE FAILED - check logs"
+            withCredentials([string(credentialsId: 'google-chat-webhook', variable: 'WEBHOOK_URL')]) {
+                sh """
+                curl -X POST -H 'Content-Type: application/json' \
+                -d '{
+                    "text": "❌ CI/CD FAILED 💥\\nJob: ${JOB_NAME}\\nBuild: ${BUILD_NUMBER}\\nCheck Jenkins logs for details"
+                }' \
+                $WEBHOOK_URL
+                """
+            }
+        }
+
+        always {
+            echo "Pipeline execution completed"
         }
     }
 }
