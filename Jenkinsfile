@@ -1,14 +1,13 @@
 def sendGoogleChatNotification(String message) {
     withCredentials([string(credentialsId: 'google-chat-webhook', variable: 'WEBHOOK_URL')]) {
-    sh """
-    curl -X POST -H 'Content-Type: application/json' \
-    -d '{
-          "text": "${message}"
-        }' \
-    "$WEBHOOK_URL"
-    """
+        sh '''
+        curl -X POST -H "Content-Type: application/json" \
+        --data "{\"text\":\"''' + message + '''\"}" \
+        "$WEBHOOK_URL"
+        '''
     }
 }
+
 pipeline {
     agent any
 
@@ -111,30 +110,22 @@ pipeline {
     post {
 
         success {
-            withCredentials([string(credentialsId: 'google-chat-webhook', variable: 'WEBHOOK_URL')]) {
-                sh '''
-                echo "Sending SUCCESS notification..."
-
-                curl -X POST -H "Content-Type: application/json" \
-                --data "{\"text\":\"✅ CI/CD SUCCESS 🚀\\nJob: ${JOB_NAME}\\nBuild: ${BUILD_NUMBER}\\nImage: devsecops-app:latest\"}" \
-                "$WEBHOOK_URL"
-                '''
+            script {
+                sendGoogleChatNotification("✅ SUCCESS: Build ${env.BUILD_NUMBER} (${env.IMAGE_TAG}) completed successfully. Job: ${env.JOB_NAME}")
             }
+            echo "✅ Pipeline succeeded!"
         }
 
         failure {
-            withCredentials([string(credentialsId: 'google-chat-webhook', variable: 'WEBHOOK_URL')]) {
-                sh '''
-                echo "Sending FAILURE notification..."
-
-                curl -X POST -H "Content-Type: application/json" \
-                --data "{\"text\":\"❌ CI/CD FAILED 💥\\nJob: ${JOB_NAME}\\nBuild: ${BUILD_NUMBER}\\nCheck Jenkins logs\"}" \
-                "$WEBHOOK_URL"
-                '''
+            script {
+                sendGoogleChatNotification("❌ FAILURE: Build ${env.BUILD_NUMBER} failed. Check Jenkins logs. Job: ${env.JOB_NAME}")
             }
+            echo "❌ Pipeline failed!"
         }
 
         always {
+            sh 'docker logout || true'
+            cleanWs()
             echo "Pipeline execution completed"
         }
     }
