@@ -4,7 +4,7 @@ const hostname = '0.0.0.0';
 const port = 3000;
 
 // Change this value to test CI/CD
-const version = "v8- new updates";
+const version = "v9- new updates";
 
 const server = http.createServer((req, res) => {
   res.statusCode = 200;
