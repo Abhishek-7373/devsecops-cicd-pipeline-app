@@ -4,7 +4,7 @@ const hostname = '0.0.0.0';
 const port = 3000;
 
 // Change this value to test CI/CD
-const version = "v5- chat notification updates";
+const version = "v6- end to end updates";
 
 const server = http.createServer((req, res) => {
   res.statusCode = 200;
